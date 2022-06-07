@@ -62,6 +62,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<String> permissions = new ArrayList<>();
     private List<String> permissionsRejected = new ArrayList<>();
 
+    private Marker centerPolygonMarker = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -184,15 +186,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
                 float[] results = {0};
                 Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
-                Toast.makeText(MapsActivity.this, String.format("Distance between two points: %.2f", results[0]), Toast.LENGTH_LONG).show();
-                mMap.addMarker(new MarkerOptions().position(midpoint).title("test"));
+                mMap.addMarker(new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0])));
+
             }
         });
 
         mMap.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
             @Override
             public void onPolygonClick(@NonNull Polygon polygon) {
-                Log.d(TAG, " " + polygon.getTag());
+                if (centerPolygonMarker == null) {
+                    centerPolygonMarker = mMap.addMarker(new MarkerOptions().position(bounds.getCenter()).title(String.format("Total distance: %.2f", getTotalDistanceOfPolygon())));
+                } else {
+                    centerPolygonMarker.remove();
+                    centerPolygonMarker = null;
+
+                }
+            }
+
+            private double getTotalDistanceOfPolygon() {
+                return 0;
             }
         });
 
