@@ -30,6 +30,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
@@ -117,7 +118,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.addMarker(new MarkerOptions().position(toronto).title("Marker in Toronto").snippet("A"));
         mMap.addMarker(new MarkerOptions().position(brampton).title("Marker in Brampton").snippet("B"));
         mMap.addMarker(new MarkerOptions().position(mississauga).title("Marker in Mississauga").snippet("C"));
-        mMap.addMarker(new MarkerOptions().position(vaughan).title("Marker in Vaughan").snippet("D"));
+        mMap.addMarker(new MarkerOptions().position(vaughan).title("D"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(toronto));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(brampton));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mississauga));
@@ -158,10 +159,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         line2.clickable(true);
         line3.clickable(true);
         line4.clickable(true);
-//        mMap.addPolyline(line1);
-//        mMap.addPolyline(line2);
-//        mMap.addPolyline(line3);
-//        mMap.addPolyline(line4);
+        mMap.addPolyline(line1);
+        mMap.addPolyline(line2);
+        mMap.addPolyline(line3);
+        mMap.addPolyline(line4);
 
         Polygon polygon = googleMap.addPolygon(new PolygonOptions().clickable(true).add(
                 toronto,
@@ -179,10 +180,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 List<LatLng> points = polyline.getPoints();
                 LatLng point1 = points.get(0);
                 LatLng point2 = points.get(1);
-                LatLng midpoint = new LatLng(((point1.latitude + point2.latitude)/2), ((point2.longitude + point2.longitude)/2));
+
+                LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
                 float[] results = {0};
                 Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
                 Toast.makeText(MapsActivity.this, String.format("Distance between two points: %.2f", results[0]), Toast.LENGTH_LONG).show();
+                mMap.addMarker(new MarkerOptions().position(midpoint).title("test"));
+            }
+        });
+
+        mMap.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
+            @Override
+            public void onPolygonClick(@NonNull Polygon polygon) {
+                Log.d(TAG, " " + polygon.getTag());
+            }
+        });
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(@NonNull LatLng latLng) {
+                Log.d(TAG, "lat: " + latLng.latitude);
             }
         });
     }
