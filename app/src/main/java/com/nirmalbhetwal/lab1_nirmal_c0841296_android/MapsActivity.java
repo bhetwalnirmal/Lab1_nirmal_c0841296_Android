@@ -169,7 +169,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 brampton,
                 vaughan
         ));
-
+        polygon.setStrokeColor(Color.RED);
         polygon.setTag("alpha");
         polygon.setFillColor(Color.argb(90, 0, 100, 0));
 
