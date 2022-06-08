@@ -75,10 +75,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private final int UPDATE_INTERVAL = 5000;
     private final int FASTEST_UPDATE_INTERVAL = 3000;
     private FusedLocationProviderClient fusedLocationProviderClient;
+    private int pickedColor;
 
     private List<String> permissionsToRequest;
     private List<String> permissions = new ArrayList<>();
     private List<String> permissionsRejected = new ArrayList<>();
+
+    Polyline polyline1, clickedPolyLine;
+    Polyline polyline2;
+    Polyline polyline3;
+    Polyline polyline4;
 
     private Marker centerPolygonMarker = null;
     private ArrayList<Marker> mMarkers = new ArrayList<>();
@@ -180,10 +186,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         line2.clickable(true);
         line3.clickable(true);
         line4.clickable(true);
-        mMap.addPolyline(line1).setTag(TAG_LINE1);
-        mMap.addPolyline(line2).setTag(TAG_LINE2);
-        mMap.addPolyline(line3).setTag(TAG_LINE3);
-        mMap.addPolyline(line4).setTag(TAG_LINE4);
+        polyline1 = mMap.addPolyline(line1);
+        polyline1.setTag(TAG_LINE1);
+        polyline2 = mMap.addPolyline(line2);
+        polyline2.setTag(TAG_LINE2);
+        polyline3 = mMap.addPolyline(line3);
+        polyline3.setTag(TAG_LINE3);
+        polyline4 = mMap.addPolyline(line4);
+        polyline4.setTag(TAG_LINE4);
 
         Polygon polygon = googleMap.addPolygon(new PolygonOptions().clickable(true).add(
                 toronto,
@@ -199,6 +209,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
             @Override
             public void onPolylineClick(@NonNull Polyline polyline) {
+                clickedPolyLine = polyline;
                 List<LatLng> points = polyline.getPoints();
                 LatLng point1 = points.get(0);
                 LatLng point2 = points.get(1);
@@ -284,39 +295,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(@NonNull Marker marker) {
-                switch (marker.getTag().toString()) {
-                    case TAG_CENTER:
-                        int width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
-                        int height = (int)(getResources().getDisplayMetrics().heightPixels*0.90);
-                        Dialog dialog = new Dialog(MapsActivity.this);
-                        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                        dialog.setContentView(R.layout.color_picker);
-                        dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
-                        Button setColor = dialog.findViewById(R.id.btnSetColor);
-                        Button cancel = dialog.findViewById(R.id.btnCancel);
-                        cancel.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                dialog.dismiss();
-                            }
-                        });
-                        setColor.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                EditText colorValue = dialog.findViewById(R.id.colorValue);
-                                String colorText = colorValue.getText().toString();
+                pickedColor = 0;
+                Dialog dialog = new Dialog(MapsActivity.this);
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog.setContentView(R.layout.color_picker);
+                int width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
+                dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+                Button setColor = dialog.findViewById(R.id.btnSetColor);
+                Button cancel = dialog.findViewById(R.id.btnCancel);
 
-                                int color = Color.parseColor(colorText);
-                                polygon.setFillColor(color);
-                                dialog.dismiss();
-                            }
-                        });
+                dialog.show();
+                cancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
 
-                        dialog.show();
-                        break;
-                    default:
-                        break;
-                }
+                setColor.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        EditText colorValue = dialog.findViewById(R.id.colorValue);
+                        String colorText = colorValue.getText().toString();
+
+                        pickedColor = Color.parseColor(colorText);
+                        dialog.dismiss();
+
+                        switch (marker.getTag().toString()) {
+                            case TAG_CENTER:
+
+                                polygon.setFillColor(pickedColor);
+                                break;
+                            default:
+                                if (clickedPolyLine != null) {
+                                    clickedPolyLine.setColor(pickedColor);
+                                }
+                                break;
+                        }
+                    }
+                });
             }
         });
 
