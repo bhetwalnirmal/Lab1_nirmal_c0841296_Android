@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -36,6 +37,7 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -158,6 +160,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(@NonNull Marker clickedMarker) {
+                for (Marker marker : mMarkers) {
+                    if (clickedMarker.getTag().equals(marker.getTag())) {
+                        return;
+                    }
+                }
                 pickedColor = 0;
                 Dialog dialog = new Dialog(MapsActivity.this);
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -209,11 +216,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 marker.showInfoWindow();
                 marker.setTag(tag);
 
-                if (mMarkers.size() == 4) {
-                    drawPolygon();
-                    drawPolyLine();
-                    calculateBounds();
-                }
+                mMarkers = convexHull(mMarkers);
+                mMap.clear();
+                drawPolygon();
+                drawPolyLine();
+                calculateBounds();
+
+            }
+        });
+
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(@NonNull LatLng latLng) {
+                mMap.clear();
+                mMarkers = new ArrayList<>();
+                mMidpointMarkers = new ArrayList<>();
+                quadrilateralIndex = 65;
+                lineIndex = 97;
             }
         });
     }
@@ -326,7 +345,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0])).snippet("Click here to change line color");
                 Marker marker = mMap.addMarker(markerOptions);
                 marker.setTag(String.format("%c", lineIndex++));
-                mMarkers.add(marker);
                 marker.showInfoWindow();
 
                 if (isMarkerAlreadyPlaced(polyline.getTag().toString())) {
@@ -488,5 +506,60 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         startUpdatingLocation();
+    }
+
+    public ArrayList<Marker> convexHull(ArrayList<Marker> markers)
+    {
+        Projection projection = mMap.getProjection();
+
+        int n = markers.size();
+        if (n <= 3) return markers;
+
+        ArrayList<Integer> next = new ArrayList<>();
+
+        // find the leftmost point
+        int leftMost = 0;
+        Point point, leftmostPoint;
+        Marker leftmostMarker = markers.get(leftMost);
+        for (int i = 1; i < n; i++) {
+            Marker marker = markers.get(i);
+            point = projection.toScreenLocation(marker.getPosition());
+            leftmostPoint = projection.toScreenLocation(leftmostMarker.getPosition());
+
+            if (point.x < leftmostPoint.x) {
+                leftMost = i;
+            }
+        }
+        int p = leftMost, q;
+        next.add(p);
+
+        // iterate till p becomes leftMost
+        do {
+            q = (p + 1) % n;
+            Marker marker = markers.get(q);
+            leftmostMarker = markers.get(leftMost);
+            point = projection.toScreenLocation(marker.getPosition());
+            leftmostPoint = projection.toScreenLocation(leftmostMarker.getPosition());
+
+            for (int i = 0; i < n; i++) {
+                if (CCW(projection.toScreenLocation(markers.get(p).getPosition()), projection.toScreenLocation(markers.get(i).getPosition()), projection.toScreenLocation(markers.get(q).getPosition()))) {
+                    q = i;
+                }
+            }
+            next.add(q);
+            p = q;
+        } while (p != leftMost);
+
+        ArrayList<Marker> convexHullPoints = new ArrayList();
+        for (int i = 0; i < next.size() - 1; i++) {
+            int ix = next.get(i);
+            convexHullPoints.add(markers.get(ix));
+        }
+
+        return convexHullPoints;
+    }
+
+    private boolean CCW(Point p, Point q, Point r) {
+        return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y) > 0;
     }
 }
