@@ -67,6 +67,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private final int LOCATION_REQUEST_CODE = 1;
     private int quadrilateralIndex = 65;
     private int lineIndex = 65;
+    Polygon polygon;
 
     // initialize the fused location provider client
     private LocationRequest locationRequest;
@@ -287,8 +288,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         switch (marker.getTag().toString()) {
                             case TAG_CENTER:
-
-//                                polygon.setFillColor(pickedColor);
+                                polygon.setFillColor(pickedColor);
                                 break;
                             default:
                                 if (clickedPolyLine != null) {
@@ -344,7 +344,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         for (Marker marker : mMarkers) {
             latLngs.add(marker.getPosition());
         }
-        Polygon polygon = mMap.addPolygon(new PolygonOptions().clickable(true).addAll(latLngs));
+        polygon = mMap.addPolygon(new PolygonOptions().clickable(true).addAll(latLngs));
         polygon.setStrokeColor(Color.RED);
         polygon.setTag("alpha");
         // set alpha to 35% = 0x59
@@ -441,12 +441,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 catch (Exception e) {
                     e.printStackTrace(); // getFromLocation() may sometimes fail
                 }
-//                tvLocationData.setText(
-//                        String.format(
-//                                "Latitude: %s\nLongitude: %s\nAltitude: %s\nAccuracy: %s\nAddress: %s\n",
-//                                location.getLatitude(), location.getLongitude(), location.getAltitude(), location.getAccuracy(), address)
-//                );
-                Log.d(TAG, "on Success + Loc " + location.getLatitude() + " long: " + location.getLongitude());
             }
         };
 
