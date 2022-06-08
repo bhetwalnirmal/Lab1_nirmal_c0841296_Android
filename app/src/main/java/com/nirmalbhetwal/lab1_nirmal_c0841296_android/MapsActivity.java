@@ -84,6 +84,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<String> permissionsToRequest;
     private List<String> permissions = new ArrayList<>();
     private List<String> permissionsRejected = new ArrayList<>();
+    private ArrayList<Polyline> mPolylines = new ArrayList<>();
 
     Polyline polyline1, clickedPolyLine;
     Polyline polyline2;
@@ -215,9 +216,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mMarkers.add(marker);
                 marker.showInfoWindow();
                 marker.setTag(tag);
-
                 mMarkers = convexHull(mMarkers);
-                mMap.clear();
+
                 drawPolygon();
                 drawPolyLine();
                 calculateBounds();
@@ -237,30 +237,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
+    private void clearMap() {
+        for (Polyline polyline : mPolylines) {
+            polyline.remove();
+        }
+
+        for (Marker marker: mMarkers) {
+            marker.remove();
+        }
+
+        for (Marker marker: mMidpointMarkers) {
+            marker.remove();
+        }
+
+        if (polygon != null) {
+            polygon.remove();
+        }
+    }
+
     private void displayMarkersInMap() {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
-
-//        String markerTag = String.format("%c", quadrilateralIndex++);
-//        Marker marker = new Marker(new zzx);
-//
-//        Marker m = mMap.addMarker(new MarkerOptions().position(toronto).title(markerTag));
-//        m.setTag(markerTag);
-//        mMarkers.add(m);
-//        markerTag = String.format("%c", quadrilateralIndex++);
-//        m = mMap.addMarker(new MarkerOptions().position(mississauga).title(markerTag));
-//        m.setTag(markerTag);
-//        m.setSnippet("Click here to change line color");
-//        mMarkers.add(m);
-//        markerTag = String.format("%c", quadrilateralIndex++);
-//        m = mMap.addMarker(new MarkerOptions().position(brampton).title(markerTag));
-//        m.setTag(markerTag);
-//        m.setSnippet("Click here to change line color");
-//        mMarkers.add(m);
-//        markerTag = String.format("%c", quadrilateralIndex++);
-//        m = mMap.addMarker(new MarkerOptions().position(vaughan).title(markerTag));
-//        m.setTag(markerTag);
-//        m.setSnippet("Click here to change line color");
-//        mMarkers.add(m);
         boundBuilder = new LatLngBounds.Builder();
         if (mMarkers.size() == 0) {
             boundBuilder.include(toronto);
@@ -316,6 +312,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     .color(Color.RED);
                 line.clickable(true);
                 clickedPolyLine = mMap.addPolyline(line);
+                mPolylines.add(clickedPolyLine);
                 clickedPolyLine.setTag(String.format("%c", lineIndex++));
             } else if (i == mMarkers.size() - 1) {
                 LatLng point1 = mMarkers.get(i).getPosition();
@@ -326,6 +323,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         .color(Color.RED);
                 line.clickable(true);
                 clickedPolyLine = mMap.addPolyline(line);
+                mPolylines.add(clickedPolyLine);
                 clickedPolyLine.setTag(String.format("%c", lineIndex++));
             }
         }
@@ -333,7 +331,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
             @Override
             public void onPolylineClick(@NonNull Polyline polyline) {
-                Log.d(TAG, "polyline click");
                 clickedPolyLine = polyline;
                 List<LatLng> points = polyline.getPoints();
                 LatLng point1 = points.get(0);
