@@ -6,6 +6,7 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -17,6 +18,8 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,6 +56,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String TAG_LINE2 = "LINE_2";
     private static final String TAG_LINE3 = "LINE_3";
     private static final String TAG_LINE4 = "LINE_4";
+    private static final String TAG_CENTER = "CENTER";
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
@@ -185,7 +189,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         ));
         polygon.setStrokeColor(Color.RED);
         polygon.setTag("alpha");
-        polygon.setFillColor(Color.argb(90, 0, 100, 0));
+        int greenColor = 0x5900ff00;
+        polygon.setFillColor(greenColor);
 
         mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
             @Override
@@ -258,7 +263,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onPolygonClick(@NonNull Polygon polygon) {
                 if (centerPolygonMarker == null) {
-                    centerPolygonMarker = mMap.addMarker(new MarkerOptions().position(bounds.getCenter()).title(String.format("Total distance: %.2f", getTotalDistanceOfPolygon())));
+                    centerPolygonMarker = mMap.addMarker(new MarkerOptions().position(bounds.getCenter()).title(String.format("Total distance: %.2f", getTotalDistanceOfPolygon())).snippet("Click here to change color"));
+                    centerPolygonMarker.setTag(TAG_CENTER);
                     centerPolygonMarker.showInfoWindow();
                 } else {
                     centerPolygonMarker.remove();
@@ -274,8 +280,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(@NonNull Marker marker) {
-                new AlertDialog.Builder(MapsActivity.this).setTitle("You clicked the marker + " + marker.getTag()).show();
-
+                switch (marker.getTag().toString()) {
+                    case TAG_CENTER:
+                        int width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
+                        int height = (int)(getResources().getDisplayMetrics().heightPixels*0.90);
+                        Dialog dialog = new Dialog(MapsActivity.this);
+                        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        dialog.setContentView(R.layout.color_picker);
+                        dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        dialog.show();
+                        break;
+                    default:
+                        break;
+                }
             }
         });
 
