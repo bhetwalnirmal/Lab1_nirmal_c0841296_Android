@@ -42,9 +42,15 @@ import com.nirmalbhetwal.lab1_nirmal_c0841296_android.databinding.ActivityMapsBi
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
     public static final String TAG = "Maps Activity";
+    private static final String TAG_LINE1 = "LINE_1";
+    private static final String TAG_LINE2 = "LINE_2";
+    private static final String TAG_LINE3 = "LINE_3";
+    private static final String TAG_LINE4 = "LINE_4";
+
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private final int LOCATION_REQUEST_CODE = 1;
@@ -63,6 +69,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<String> permissionsRejected = new ArrayList<>();
 
     private Marker centerPolygonMarker = null;
+    private ArrayList<Marker> mMarkers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,10 +168,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         line2.clickable(true);
         line3.clickable(true);
         line4.clickable(true);
-        mMap.addPolyline(line1);
-        mMap.addPolyline(line2);
-        mMap.addPolyline(line3);
-        mMap.addPolyline(line4);
+        mMap.addPolyline(line1).setTag(TAG_LINE1);
+        mMap.addPolyline(line2).setTag(TAG_LINE2);
+        mMap.addPolyline(line3).setTag(TAG_LINE3);
+        mMap.addPolyline(line4).setTag(TAG_LINE4);
 
         Polygon polygon = googleMap.addPolygon(new PolygonOptions().clickable(true).add(
                 toronto,
@@ -186,8 +193,56 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
                 float[] results = {0};
                 Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
-                mMap.addMarker(new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0])));
+                MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0]));
+                Marker marker = mMap.addMarker(markerOptions);
 
+                switch (polyline.getTag().toString()) {
+                    case TAG_LINE1:
+                        if (isMarkerAlreadyPlaced(TAG_LINE1)) {
+                            int position = 0;
+                            for (Marker myMarker : mMarkers) {
+                                if (myMarker.getTag().equals(TAG_LINE1)) {
+                                    myMarker.remove();
+                                    break;
+                                }
+                                position++;
+                            }
+                            mMarkers.remove(position);
+                            marker.remove();
+                        } else {
+                            marker.setTag(TAG_LINE1);
+                            mMarkers.add(marker);
+                        }
+                        break;
+                    case TAG_LINE2:
+                        marker.setTag(TAG_LINE2);
+                        mMarkers.add(marker);
+                        break;
+                    case TAG_LINE3:
+                        marker.setTag(TAG_LINE3);
+                        mMarkers.add(marker);
+                        break;
+                    case TAG_LINE4:
+                        marker.setTag(TAG_LINE4);
+                        mMarkers.add(marker);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            private boolean isMarkerAlreadyPlaced(String tag) {
+                boolean exists = false;
+
+                for (Marker marker : mMarkers) {
+                    if (marker.getTag().equals(tag)) {
+                        Log.d(TAG, "exists");
+                        exists = true;
+                        break;
+                    }
+                }
+
+                return exists;
             }
         });
 
