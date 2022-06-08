@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -16,6 +17,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -28,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -54,6 +57,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private final int LOCATION_REQUEST_CODE = 1;
+    private int quadrilateralIndex = 65;
 
     // initialize the fused location provider client
     private LocationRequest locationRequest;
@@ -193,8 +197,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
                 float[] results = {0};
                 Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
-                MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0]));
+                MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0])).snippet("Click here to change line color");
                 Marker marker = mMap.addMarker(markerOptions);
+                marker.showInfoWindow();
 
                 switch (polyline.getTag().toString()) {
                     case TAG_LINE1:
@@ -254,10 +259,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onPolygonClick(@NonNull Polygon polygon) {
                 if (centerPolygonMarker == null) {
                     centerPolygonMarker = mMap.addMarker(new MarkerOptions().position(bounds.getCenter()).title(String.format("Total distance: %.2f", getTotalDistanceOfPolygon())));
+                    centerPolygonMarker.showInfoWindow();
                 } else {
                     centerPolygonMarker.remove();
                     centerPolygonMarker = null;
-
                 }
             }
 
@@ -266,10 +271,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(@NonNull Marker marker) {
+                new AlertDialog.Builder(MapsActivity.this).setTitle("You clicked the marker + " + marker.getTag()).show();
+
+            }
+        });
+
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(@NonNull LatLng latLng) {
-                Log.d(TAG, "lat: " + latLng.latitude);
+                // set the title of marker and update marker
+                String tag = String.format("%c", quadrilateralIndex++);
+                Marker marker  = mMap.addMarker(new MarkerOptions().position(latLng).title(tag));
+                marker.showInfoWindow();
+                marker.setTag(tag);
             }
         });
     }
@@ -410,8 +427,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (location == null) {
                     return;
                 }
-
-                Log.d(TAG, "on Success " + location.getLatitude() + " " + location.getLongitude());
             }
         });
 
