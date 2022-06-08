@@ -133,10 +133,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng brampton = new LatLng(43.7315, -79.7624);
         LatLng mississauga = new LatLng(43.5890, -79.6441);
         LatLng vaughan = new LatLng(43.8563, -79.5085);
-        mMap.addMarker(new MarkerOptions().position(toronto).title("Marker in Toronto").snippet("A"));
-        mMap.addMarker(new MarkerOptions().position(brampton).title("Marker in Brampton").snippet("B"));
-        mMap.addMarker(new MarkerOptions().position(mississauga).title("Marker in Mississauga").snippet("C"));
-        mMap.addMarker(new MarkerOptions().position(vaughan).title("D"));
+        String markerTag = String.format("%c", quadrilateralIndex++);
+        Marker m = mMap.addMarker(new MarkerOptions().position(toronto).title(markerTag));
+        m.setTag(markerTag);
+        mMarkers.add(m);
+        markerTag = String.format("%c", quadrilateralIndex++);
+        m = mMap.addMarker(new MarkerOptions().position(mississauga).title(markerTag));
+        m.setTag(markerTag);
+        mMarkers.add(m);
+        markerTag = String.format("%c", quadrilateralIndex++);
+        m = mMap.addMarker(new MarkerOptions().position(brampton).title(markerTag));
+        m.setTag(markerTag);
+        mMarkers.add(m);
+        markerTag = String.format("%c", quadrilateralIndex++);
+        m = mMap.addMarker(new MarkerOptions().position(vaughan).title(markerTag));
+        m.setTag(markerTag);
+        mMarkers.add(m);
+//        mMap.addMarker(new MarkerOptions().position(mississauga).title("Marker in Mississauga").snippet("C"));
+//        mMap.addMarker(new MarkerOptions().position(vaughan).title("D"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(toronto));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(brampton));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mississauga));
@@ -144,15 +158,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         LatLngBounds.Builder boundBuilder = new LatLngBounds.Builder();
 
-        ArrayList<LatLng> markers = new ArrayList<LatLng>();
-        markers.add(toronto);
-        markers.add(brampton);
-        markers.add(mississauga);
-        markers.add(vaughan);
+//        ArrayList<LatLng> markers = new ArrayList<LatLng>();
+//        markers.add(toronto);
+//        markers.add(brampton);
+//        markers.add(mississauga);
+//        markers.add(vaughan);
 
-        for (LatLng marker : markers) {
-            boundBuilder.include(marker);
+        for (Marker markerLocation : mMarkers) {
+//            mMap.moveCamera(CameraUpdateFactory.newLatLng(markerLocation.getPosition()));
+            boundBuilder.include(markerLocation.getPosition());
         }
+
         int width = getResources().getDisplayMetrics().widthPixels;
         int height = getResources().getDisplayMetrics().heightPixels;
         int padding = (int) (width * 0.10);
@@ -194,6 +210,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         ));
         polygon.setStrokeColor(Color.RED);
         polygon.setTag("alpha");
+        // set alpha to 35% = 0x59
+        // color code = 0xAARRGGBB
         int greenColor = 0x5900ff00;
         polygon.setFillColor(greenColor);
 
