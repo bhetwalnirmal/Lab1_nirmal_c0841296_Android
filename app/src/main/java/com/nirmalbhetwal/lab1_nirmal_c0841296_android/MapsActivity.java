@@ -66,7 +66,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ActivityMapsBinding binding;
     private final int LOCATION_REQUEST_CODE = 1;
     private int quadrilateralIndex = 65;
-    private int lineIndex = 65;
+    private int lineIndex = 97;
     Polygon polygon;
 
     // initialize the fused location provider client
@@ -96,6 +96,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private Marker centerPolygonMarker = null;
     private ArrayList<Marker> mMarkers = new ArrayList<>();
+    private ArrayList<Marker> mMidpointMarkers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,111 +134,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        displayMarkersInMap(googleMap);
-    }
-
-    private void displayMarkersInMap(GoogleMap googleMap) {
         mMap = googleMap;
-
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
-
-//        String markerTag = String.format("%c", quadrilateralIndex++);
-//        Marker marker = new Marker(new zzx);
-//
-//        Marker m = mMap.addMarker(new MarkerOptions().position(toronto).title(markerTag));
-//        m.setTag(markerTag);
-//        mMarkers.add(m);
-//        markerTag = String.format("%c", quadrilateralIndex++);
-//        m = mMap.addMarker(new MarkerOptions().position(mississauga).title(markerTag));
-//        m.setTag(markerTag);
-//        m.setSnippet("Click here to change line color");
-//        mMarkers.add(m);
-//        markerTag = String.format("%c", quadrilateralIndex++);
-//        m = mMap.addMarker(new MarkerOptions().position(brampton).title(markerTag));
-//        m.setTag(markerTag);
-//        m.setSnippet("Click here to change line color");
-//        mMarkers.add(m);
-//        markerTag = String.format("%c", quadrilateralIndex++);
-//        m = mMap.addMarker(new MarkerOptions().position(vaughan).title(markerTag));
-//        m.setTag(markerTag);
-//        m.setSnippet("Click here to change line color");
-//        mMarkers.add(m);
-        boundBuilder = new LatLngBounds.Builder();
-        if (mMarkers.size() == 0) {
-            boundBuilder.include(toronto);
-        }
-
-        bounds = boundBuilder.build();
-        calculateBounds();
-        mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
-            @Override
-            public void onPolylineClick(@NonNull Polyline polyline) {
-
-                Log.d(TAG, "polyline click");
-                clickedPolyLine = polyline;
-                List<LatLng> points = polyline.getPoints();
-                LatLng point1 = points.get(0);
-                LatLng point2 = points.get(1);
-
-                LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
-                float[] results = {0};
-                Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
-                MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0])).snippet("Click here to change line color");
-                Marker marker = mMap.addMarker(markerOptions);
-                marker.showInfoWindow();
-
-                switch (polyline.getTag().toString()) {
-                    case TAG_LINE1:
-                        if (isMarkerAlreadyPlaced(TAG_LINE1)) {
-                            removeMarkerOnLine(marker, TAG_LINE1);
-                        } else {
-                            marker.setTag(TAG_LINE1);
-                            mMarkers.add(marker);
-                        }
-                        break;
-                    case TAG_LINE2:
-                        if (isMarkerAlreadyPlaced(TAG_LINE2)) {
-                            removeMarkerOnLine(marker, TAG_LINE2);
-                        } else {
-                            marker.setTag(TAG_LINE2);
-                            mMarkers.add(marker);
-                        }
-                        break;
-                    case TAG_LINE3:
-                        if (isMarkerAlreadyPlaced(TAG_LINE3)) {
-                            removeMarkerOnLine(marker, TAG_LINE3);
-                        } else {
-                            marker.setTag(TAG_LINE3);
-                            mMarkers.add(marker);
-                        }
-                        break;
-                    case TAG_LINE4:
-                        if (isMarkerAlreadyPlaced(TAG_LINE4)) {
-                            removeMarkerOnLine(marker, TAG_LINE4);
-                        } else {
-                            marker.setTag(TAG_LINE4);
-                            mMarkers.add(marker);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            private boolean isMarkerAlreadyPlaced(String tag) {
-                boolean exists = false;
-
-                for (Marker marker : mMarkers) {
-                    if (marker.getTag().equals(tag)) {
-                        Log.d(TAG, "exists");
-                        exists = true;
-                        break;
-                    }
-                }
-
-                return exists;
-            }
-        });
+        displayMarkersInMap();
 
         mMap.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
             @Override
@@ -259,7 +157,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
-            public void onInfoWindowClick(@NonNull Marker marker) {
+            public void onInfoWindowClick(@NonNull Marker clickedMarker) {
                 pickedColor = 0;
                 Dialog dialog = new Dialog(MapsActivity.this);
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -286,7 +184,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         pickedColor = Color.parseColor(colorText);
                         dialog.dismiss();
 
-                        switch (marker.getTag().toString()) {
+                        switch (clickedMarker.getTag().toString()) {
                             case TAG_CENTER:
                                 polygon.setFillColor(pickedColor);
                                 break;
@@ -312,12 +210,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 marker.setTag(tag);
 
                 if (mMarkers.size() == 4) {
-                    drawPolyLine();
                     drawPolygon();
+                    drawPolyLine();
                     calculateBounds();
                 }
             }
         });
+    }
+
+    private void displayMarkersInMap() {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
+
+//        String markerTag = String.format("%c", quadrilateralIndex++);
+//        Marker marker = new Marker(new zzx);
+//
+//        Marker m = mMap.addMarker(new MarkerOptions().position(toronto).title(markerTag));
+//        m.setTag(markerTag);
+//        mMarkers.add(m);
+//        markerTag = String.format("%c", quadrilateralIndex++);
+//        m = mMap.addMarker(new MarkerOptions().position(mississauga).title(markerTag));
+//        m.setTag(markerTag);
+//        m.setSnippet("Click here to change line color");
+//        mMarkers.add(m);
+//        markerTag = String.format("%c", quadrilateralIndex++);
+//        m = mMap.addMarker(new MarkerOptions().position(brampton).title(markerTag));
+//        m.setTag(markerTag);
+//        m.setSnippet("Click here to change line color");
+//        mMarkers.add(m);
+//        markerTag = String.format("%c", quadrilateralIndex++);
+//        m = mMap.addMarker(new MarkerOptions().position(vaughan).title(markerTag));
+//        m.setTag(markerTag);
+//        m.setSnippet("Click here to change line color");
+//        mMarkers.add(m);
+        boundBuilder = new LatLngBounds.Builder();
+        if (mMarkers.size() == 0) {
+            boundBuilder.include(toronto);
+            boundBuilder.include(mississauga);
+            boundBuilder.include(brampton);
+        }
+
+        bounds = boundBuilder.build();
+        calculateBounds();
     }
 
     private void calculateBounds() {
@@ -362,8 +295,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 PolylineOptions line = new PolylineOptions().add(point1, point2)
                     .width(5)
                     .color(Color.RED);
-                mMap.addPolyline(line).setTag(String.format("%c", lineIndex++));
                 line.clickable(true);
+                clickedPolyLine = mMap.addPolyline(line);
+                clickedPolyLine.setTag(String.format("%c", lineIndex++));
             } else if (i == mMarkers.size() - 1) {
                 LatLng point1 = mMarkers.get(i).getPosition();
                 LatLng point2 = mMarkers.get(0).getPosition();
@@ -371,43 +305,60 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 PolylineOptions line = new PolylineOptions().add(point1, point2)
                         .width(5)
                         .color(Color.RED);
-                mMap.addPolyline(line).setTag(String.format("%c", lineIndex++));
                 line.clickable(true);
+                clickedPolyLine = mMap.addPolyline(line);
+                clickedPolyLine.setTag(String.format("%c", lineIndex++));
             }
         }
-//        PolylineOptions line1 = new PolylineOptions().add(toronto, mississauga)
-//                .width(5)
-//                .color(Color.BLUE);
-//        PolylineOptions line2 = new PolylineOptions().add(mississauga, brampton)
-//                .width(5)
-//                .color(Color.RED);
-//        PolylineOptions line3 = new PolylineOptions().add(brampton, vaughan)
-//                .width(5)
-//                .color(Color.RED);
-//        PolylineOptions line4 = new PolylineOptions().add(vaughan, toronto)
-//                .width(5)
-//                .color(Color.RED);
-//
-//        polyline1 = mMap.addPolyline(line1);
-//        polyline1.setTag(TAG_LINE1);
-//        polyline2 = mMap.addPolyline(line2);
-//        polyline2.setTag(TAG_LINE2);
-//        polyline3 = mMap.addPolyline(line3);
-//        polyline3.setTag(TAG_LINE3);
-//        polyline4 = mMap.addPolyline(line4);
-//        polyline4.setTag(TAG_LINE4);
-//
-//        line1.clickable(true);
-//        line2.clickable(true);
-//        line3.clickable(true);
-//        line4.clickable(true);
+
+        mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
+            @Override
+            public void onPolylineClick(@NonNull Polyline polyline) {
+                Log.d(TAG, "polyline click");
+                clickedPolyLine = polyline;
+                List<LatLng> points = polyline.getPoints();
+                LatLng point1 = points.get(0);
+                LatLng point2 = points.get(1);
+
+                LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
+                float[] results = {0};
+                Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
+                MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0])).snippet("Click here to change line color");
+                Marker marker = mMap.addMarker(markerOptions);
+                marker.setTag(String.format("%c", lineIndex++));
+                mMarkers.add(marker);
+                marker.showInfoWindow();
+
+                if (isMarkerAlreadyPlaced(polyline.getTag().toString())) {
+                    removeMarkerOnLine(marker, polyline.getTag().toString());
+                } else {
+                    marker.setTag(polyline.getTag().toString());
+                    mMidpointMarkers.add(marker);
+                }
+            }
+
+            private boolean isMarkerAlreadyPlaced(String tag) {
+                boolean exists = false;
+
+                // check if the marker is already placed
+                for (Marker marker : mMidpointMarkers) {
+                    if (marker.getTag().equals(tag)) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                return exists;
+            }
+        });
     }
 
     private void removeMarkerOnLine(Marker marker, String tag) {
-        for (int i = 0; i < mMarkers.size(); i++)  {
-            if (mMarkers.get(i).getTag().equals(tag)) {
-                mMarkers.get(i).remove();
-                mMarkers.remove(i);
+        // remove the midpoint parker on the line
+        for (int i = 0; i < mMidpointMarkers.size(); i++)  {
+            if (mMidpointMarkers.get(i).getTag().equals(tag)) {
+                mMidpointMarkers.get(i).remove();
+                mMidpointMarkers.remove(i);
                 marker.remove();
                 break;
             }
