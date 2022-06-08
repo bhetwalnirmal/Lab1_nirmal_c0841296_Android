@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -18,8 +19,11 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -288,6 +292,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                         dialog.setContentView(R.layout.color_picker);
                         dialog.getWindow().setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT);
+                        Button setColor = dialog.findViewById(R.id.btnSetColor);
+                        Button cancel = dialog.findViewById(R.id.btnCancel);
+                        cancel.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                dialog.dismiss();
+                            }
+                        });
+                        setColor.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                EditText colorValue = dialog.findViewById(R.id.colorValue);
+                                String colorText = colorValue.getText().toString();
+
+                                int color = Color.parseColor(colorText);
+                                polygon.setFillColor(color);
+                                dialog.dismiss();
+                            }
+                        });
+
                         dialog.show();
                         break;
                     default:
