@@ -199,32 +199,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 switch (polyline.getTag().toString()) {
                     case TAG_LINE1:
                         if (isMarkerAlreadyPlaced(TAG_LINE1)) {
-                            int position = 0;
-                            for (Marker myMarker : mMarkers) {
-                                if (myMarker.getTag().equals(TAG_LINE1)) {
-                                    myMarker.remove();
-                                    break;
-                                }
-                                position++;
-                            }
-                            mMarkers.remove(position);
-                            marker.remove();
+                            removeMarkerOnLine(marker, TAG_LINE1);
                         } else {
                             marker.setTag(TAG_LINE1);
                             mMarkers.add(marker);
                         }
                         break;
                     case TAG_LINE2:
-                        marker.setTag(TAG_LINE2);
-                        mMarkers.add(marker);
+                        if (isMarkerAlreadyPlaced(TAG_LINE2)) {
+                            removeMarkerOnLine(marker, TAG_LINE2);
+                        } else {
+                            marker.setTag(TAG_LINE2);
+                            mMarkers.add(marker);
+                        }
                         break;
                     case TAG_LINE3:
-                        marker.setTag(TAG_LINE3);
-                        mMarkers.add(marker);
+                        if (isMarkerAlreadyPlaced(TAG_LINE3)) {
+                            removeMarkerOnLine(marker, TAG_LINE3);
+                        } else {
+                            marker.setTag(TAG_LINE3);
+                            mMarkers.add(marker);
+                        }
                         break;
                     case TAG_LINE4:
-                        marker.setTag(TAG_LINE4);
-                        mMarkers.add(marker);
+                        if (isMarkerAlreadyPlaced(TAG_LINE4)) {
+                            removeMarkerOnLine(marker, TAG_LINE4);
+                        } else {
+                            marker.setTag(TAG_LINE4);
+                            mMarkers.add(marker);
+                        }
                         break;
                     default:
                         break;
@@ -269,6 +272,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d(TAG, "lat: " + latLng.latitude);
             }
         });
+    }
+
+    private void removeMarkerOnLine(Marker marker, String tag) {
+        for (int i = 0; i < mMarkers.size(); i++)  {
+            if (mMarkers.get(i).getTag().equals(tag)) {
+                mMarkers.get(i).remove();
+                mMarkers.remove(i);
+                marker.remove();
+                break;
+            }
+        }
     }
 
     private void startUpdatingLocation() {
