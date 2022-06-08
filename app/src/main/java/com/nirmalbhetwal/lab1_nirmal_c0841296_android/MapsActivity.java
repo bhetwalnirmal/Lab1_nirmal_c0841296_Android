@@ -42,9 +42,15 @@ import com.nirmalbhetwal.lab1_nirmal_c0841296_android.databinding.ActivityMapsBi
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
     public static final String TAG = "Maps Activity";
+    private static final String TAG_LINE1 = "LINE_1";
+    private static final String TAG_LINE2 = "LINE_2";
+    private static final String TAG_LINE3 = "LINE_3";
+    private static final String TAG_LINE4 = "LINE_4";
+
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private final int LOCATION_REQUEST_CODE = 1;
@@ -61,6 +67,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<String> permissionsToRequest;
     private List<String> permissions = new ArrayList<>();
     private List<String> permissionsRejected = new ArrayList<>();
+
+    private Marker centerPolygonMarker = null;
+    private ArrayList<Marker> mMarkers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,10 +168,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         line2.clickable(true);
         line3.clickable(true);
         line4.clickable(true);
-        mMap.addPolyline(line1);
-        mMap.addPolyline(line2);
-        mMap.addPolyline(line3);
-        mMap.addPolyline(line4);
+        mMap.addPolyline(line1).setTag(TAG_LINE1);
+        mMap.addPolyline(line2).setTag(TAG_LINE2);
+        mMap.addPolyline(line3).setTag(TAG_LINE3);
+        mMap.addPolyline(line4).setTag(TAG_LINE4);
 
         Polygon polygon = googleMap.addPolygon(new PolygonOptions().clickable(true).add(
                 toronto,
@@ -184,15 +193,76 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 LatLng midpoint = new LatLng((point1.latitude + point2.latitude)/2, (point1.longitude + point2.longitude)/2);
                 float[] results = {0};
                 Location.distanceBetween(point1.longitude, point2.latitude, point2.latitude, point2.longitude, results);
-                Toast.makeText(MapsActivity.this, String.format("Distance between two points: %.2f", results[0]), Toast.LENGTH_LONG).show();
-                mMap.addMarker(new MarkerOptions().position(midpoint).title("test"));
+                MarkerOptions markerOptions = new MarkerOptions().position(midpoint).title(String.format("Distance: %.2f", results[0]));
+                Marker marker = mMap.addMarker(markerOptions);
+
+                switch (polyline.getTag().toString()) {
+                    case TAG_LINE1:
+                        if (isMarkerAlreadyPlaced(TAG_LINE1)) {
+                            removeMarkerOnLine(marker, TAG_LINE1);
+                        } else {
+                            marker.setTag(TAG_LINE1);
+                            mMarkers.add(marker);
+                        }
+                        break;
+                    case TAG_LINE2:
+                        if (isMarkerAlreadyPlaced(TAG_LINE2)) {
+                            removeMarkerOnLine(marker, TAG_LINE2);
+                        } else {
+                            marker.setTag(TAG_LINE2);
+                            mMarkers.add(marker);
+                        }
+                        break;
+                    case TAG_LINE3:
+                        if (isMarkerAlreadyPlaced(TAG_LINE3)) {
+                            removeMarkerOnLine(marker, TAG_LINE3);
+                        } else {
+                            marker.setTag(TAG_LINE3);
+                            mMarkers.add(marker);
+                        }
+                        break;
+                    case TAG_LINE4:
+                        if (isMarkerAlreadyPlaced(TAG_LINE4)) {
+                            removeMarkerOnLine(marker, TAG_LINE4);
+                        } else {
+                            marker.setTag(TAG_LINE4);
+                            mMarkers.add(marker);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            private boolean isMarkerAlreadyPlaced(String tag) {
+                boolean exists = false;
+
+                for (Marker marker : mMarkers) {
+                    if (marker.getTag().equals(tag)) {
+                        Log.d(TAG, "exists");
+                        exists = true;
+                        break;
+                    }
+                }
+
+                return exists;
             }
         });
 
         mMap.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
             @Override
             public void onPolygonClick(@NonNull Polygon polygon) {
-                Log.d(TAG, " " + polygon.getTag());
+                if (centerPolygonMarker == null) {
+                    centerPolygonMarker = mMap.addMarker(new MarkerOptions().position(bounds.getCenter()).title(String.format("Total distance: %.2f", getTotalDistanceOfPolygon())));
+                } else {
+                    centerPolygonMarker.remove();
+                    centerPolygonMarker = null;
+
+                }
+            }
+
+            private double getTotalDistanceOfPolygon() {
+                return 0;
             }
         });
 
@@ -202,6 +272,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d(TAG, "lat: " + latLng.latitude);
             }
         });
+    }
+
+    private void removeMarkerOnLine(Marker marker, String tag) {
+        for (int i = 0; i < mMarkers.size(); i++)  {
+            if (mMarkers.get(i).getTag().equals(tag)) {
+                mMarkers.get(i).remove();
+                mMarkers.remove(i);
+                marker.remove();
+                break;
+            }
+        }
     }
 
     private void startUpdatingLocation() {
